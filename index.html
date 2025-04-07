@@ -194,7 +194,7 @@
 
         function skipFrames(frames) {
             const currentTime = player.getCurrentTime();
-            const newTime = currentTime + (frames / frameRate); 
+            const newTime = currentTime + (frames / frameRate);
             player.seekTo(newTime, true);
             console.log(`Skipped to time: ${formatTime(newTime)} (${Math.round(newTime * frameRate)} frames)`);
         }
@@ -231,16 +231,27 @@
         // This function sets the start time based on the current position
         function setStartTime() {
             const currentTime = player.getCurrentTime();
-            startTime = Math.round(currentTime * frameRate) / frameRate; // Round to closest frame
+
+            // Get the frame count based on current time (round to nearest frame)
+            const currentFrame = Math.round(currentTime * frameRate);
+
+            // Now set startTime using that frame directly (without extra conversion back to time)
+            startTime = currentFrame / frameRate;  // Convert back to time for consistency
+
             updateModNote();
         }
 
-        // This function sets the end time based on the current position
+
         function setEndTime() {
             const currentTime = player.getCurrentTime();
-            endTime = Math.round(currentTime * frameRate) / frameRate; // Round to closest frame
+            // Get the frame count based on current time (rounding the time to the closest frame)
+            const currentFrame = Math.round(currentTime * frameRate);
+            endTime = currentFrame / frameRate; // Convert back to time for consistency
+
             updateModNote();
         }
+
+
 
         function updateModNote() {
             let pauseText = "";
