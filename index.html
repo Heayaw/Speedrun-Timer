@@ -193,7 +193,10 @@
         }
 
         function skipFrames(frames) {
-            if (player) player.seekTo(player.getCurrentTime() + (frames / frameRate), true);
+            const currentTime = player.getCurrentTime();
+            const newTime = currentTime + (frames / frameRate); 
+            player.seekTo(newTime, true);
+            console.log(`Skipped to time: ${formatTime(newTime)} (${Math.round(newTime * frameRate)} frames)`);
         }
 
         function addPause() {
@@ -225,13 +228,17 @@
             updatePauseList();
         }
 
+        // This function sets the start time based on the current position
         function setStartTime() {
-            startTime = player.getCurrentTime();
+            const currentTime = player.getCurrentTime();
+            startTime = Math.round(currentTime * frameRate) / frameRate; // Round to closest frame
             updateModNote();
         }
 
+        // This function sets the end time based on the current position
         function setEndTime() {
-            endTime = player.getCurrentTime();
+            const currentTime = player.getCurrentTime();
+            endTime = Math.round(currentTime * frameRate) / frameRate; // Round to closest frame
             updateModNote();
         }
 
