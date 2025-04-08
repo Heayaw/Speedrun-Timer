@@ -8,16 +8,62 @@
     <link rel="icon" href="data:,">
     <style>
         body {
-            font-family: Arial, sans-serif;
-            margin: 50px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 40px;
             text-align: center;
-            background-color: #121212;
-            color: white;
+            background-color: #0e0e0e;
+            color: #f0f0f0;
         }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 20px;
+            color: #ffffff;
+        }
+
+        input[type="text"],
+        input[type="number"] {
+            background-color: #1e1e1e;
+            color: #fff;
+            border: 1px solid #555;
+            padding: 10px;
+            border-radius: 8px;
+            width: 280px;
+            margin-bottom: 10px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: #ff5050;
+        }
+
+        button {
+            margin: 5px;
+            padding: 10px;
+            font-size: 14px;
+            background: linear-gradient(120deg, #444, #222, #444);
+            background-size: 200% 200%;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 150px;
+            transition: background-position 0.5s ease, transform 0.2s, box-shadow 0.3s;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
+        }
+
+        button:hover {
+            background-position: right center;
+            transform: scale(1.05);
+            box-shadow: 0 0 12px #ff5050, 0 0 20px rgba(255, 80, 80, 0.2);
+        }
+
 
         .controls-container {
             display: flex;
             justify-content: center;
+            flex-wrap: wrap;
             gap: 20px;
             margin-top: 20px;
         }
@@ -27,56 +73,58 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            padding: 10px;
-            background-color: #222;
-            border-radius: 10px;
-        }
-
-        button {
-            margin: 5px;
-            padding: 10px;
-            font-size: 14px;
-            background-color: #333;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            width: 150px;
-        }
-
-        button:hover {
-            background-color: #555;
-        }
-
-        input[type="text"],
-        input[type="number"] {
-            background-color: #333;
-            color: white;
-            border: 1px solid #555;
-            padding: 5px;
-            border-radius: 5px;
-            width: 150px;
-            text-align: center;
+            padding: 15px;
+            background: #1c1c1c;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            min-width: 180px;
         }
 
         #modNote {
-            margin-top: 20px;
+            margin-top: 25px;
             font-weight: bold;
-            color: red;
+            color: #ff5050;
+            background-color: #1a1a1a;
+            padding: 10px;
+            border-radius: 8px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: inset 0 0 10px rgba(255, 80, 80, 0.2);
         }
 
         .pause-list {
             margin-top: 20px;
-            color: yellow;
+            color: #ffde59;
         }
 
         .pause-item {
-            margin: 5px;
-            padding: 5px;
-            background-color: #444;
-            border-radius: 5px;
+            margin: 8px auto;
+            padding: 10px;
+            background-color: #2c2c2c;
+            border-radius: 8px;
+            max-width: 500px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+        }
+
+        .pause-item button {
+            background-color: #880000;
+            width: auto;
+            padding: 5px 10px;
+            font-size: 12px;
+            transition: background-color 0.3s, box-shadow 0.3s;
+        }
+
+        .pause-item button:hover {
+            background-color: #bb0000;
+            box-shadow: 0 0 8px #ff4c4c;
+        }
+
+        #pauseSection {
+            margin-top: 10px;
         }
     </style>
 </head>
