@@ -267,13 +267,18 @@
         }
 
         function addPause() {
-            if (currentPause) {
-            alert("Finish the current pause before adding a new one!");
+            if (!player) {
+            alert("Load a video first!");
             return;
-        }
-        document.getElementById("pauseSection").style.display = "block";
-        currentPause = { start: null, end: null, label: "" };
-        }
+            }
+            if (currentPause) {
+                alert("Finish the current pause before adding a new one!");
+                return;
+            }
+            document.getElementById("pauseSection").style.display = "block";
+            currentPause = { start: null, end: null, label: "" };
+            }
+
 
         function setPauseStart() {
             if (!currentPause) return alert("Click 'Add Pause' first!");
@@ -406,6 +411,7 @@
     </script>
 </body>
 </html>
+
 
 
 
