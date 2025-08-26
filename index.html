@@ -167,7 +167,6 @@
         <div class="mod-controls">
             <button onclick="addPause()">Add Pause</button>
             <div id="pauseSection" style="display:none;">
-                <div style="margin: 4px; font-weight: bold; color: #ff5050;">THIS IS BROKEN DONT YELL AT ME PLS PLS PLS</div>
                 <button onclick="setPauseStart()">Set Pause Start</button>
                 <button onclick="setPauseEnd()">Set Pause End</button>
             </div>
@@ -268,31 +267,43 @@
         }
 
         function addPause() {
-            document.getElementById("pauseSection").style.display = "block";
-            currentPause = { start: null, end: null, label: "" };
+            if (currentPause) {
+            alert("Finish the current pause before adding a new one!");
+            return;
+        }
+        document.getElementById("pauseSection").style.display = "block";
+        currentPause = { start: null, end: null, label: "" };
         }
 
         function setPauseStart() {
+            if (!currentPause) return alert("Click 'Add Pause' first!");
             const fps = getFPS();
             const currentFrame = Math.round(player.getCurrentTime() * fps);
             currentPause.start = currentFrame / fps;
             alert("Pause start set to: " + framesToTime(currentFrame, fps));
         }
 
+
         function setPauseEnd() {
+            if (!currentPause) return alert("Click 'Add Pause' first!");
+            if (currentPause.start === null) return alert("Set pause start first!");
+    
             const fps = getFPS();
-            const currentFrame = Math.round(player.getCurrentTime() * fps);
+         const currentFrame = Math.round(player.getCurrentTime() * fps);
             currentPause.end = currentFrame / fps;
+    
             if (currentPause.end <= currentPause.start) {
-                alert("Pause end must be after pause start.");
-                return;
+                return alert("Pause end must be after pause start.");
             }
+    
             currentPause.label = prompt("Optional: Name this pause (e.g., 'Cutscene')") || "";
             pauses.push(currentPause);
+            currentPause = null; // RESET so a new pause can be added
             updateModNote();
             updatePauseList();
             document.getElementById("pauseSection").style.display = "none";
-        }
+        }   
+
 
         function deletePause(index) {
             pauses.splice(index, 1);
@@ -395,5 +406,6 @@
     </script>
 </body>
 </html>
+
 
 
