@@ -59,7 +59,6 @@
             box-shadow: 0 0 12px #ff5050, 0 0 20px rgba(255, 80, 80, 0.2);
         }
 
-
         .controls-container {
             display: flex;
             justify-content: center;
@@ -132,6 +131,11 @@
 <body>
     <h1>Speedrun Video Timer</h1>
     <input type="text" id="videoUrl" placeholder="Enter YouTube URL" style="width: 300px;">
+    <input type="text" id="videoUrl" placeholder="Enter YouTube URL" style="width: 300px;">
+    <div style="margin: 8px; font-weight: bold; color: #ff5050;">You suck carlosisrblx</div>
+    <input type="number" id="fpsInput" value="60" min="1" max="240" style="width: 120px;">
+
+    <input type="number" id="fpsInput" value="60" min="1" max="240" style="width: 120px;">
     <button onclick="loadVideo()">Load Video</button>
     <button onclick="resetRun()">Reset Run</button>
     <br><br>
@@ -186,9 +190,15 @@
         let player;
         let startTime = 0;
         let endTime = 0;
-        const frameRate = 60;
         let pauses = [];
         let currentPause = null;
+
+        function getFPS() {
+            const fps = parseFloat(document.getElementById('fpsInput').value);
+            const finalFPS = (fps && fps > 0) ? fps : 60;
+            console.log(`FPS set to: ${finalFPS}`);
+            return finalFPS;
+        }
 
         function loadYouTubeAPI() {
             const script = document.createElement('script');
@@ -234,17 +244,30 @@
             console.log("YouTube Player is ready.");
         }
 
+        // Convert frames → exact time string
+        function framesToTime(frame, fps) {
+            const ms = Math.round(frame * (1000 / fps));
+            const minutes = Math.floor(ms / 60000);
+            const seconds = Math.floor((ms % 60000) / 1000);
+            const milliseconds = ms % 1000;
+            return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
+        }
+
+        // Format time from seconds (via frames)
         function formatTime(seconds) {
-            let minutes = Math.floor(seconds / 60);
-            let remainingSeconds = (seconds % 60).toFixed(3).padStart(6, '0');
-            return `${minutes}:${remainingSeconds}`;
+            const fps = getFPS();
+            const frames = Math.round(seconds * fps);
+            return framesToTime(frames, fps);
         }
 
         function skipFrames(frames) {
+            const fps = getFPS();
             const currentTime = player.getCurrentTime();
-            const newTime = currentTime + (frames / frameRate);
+            const currentFrame = Math.round(currentTime * fps);
+            const newFrame = currentFrame + frames;
+            const newTime = newFrame / fps;
             player.seekTo(newTime, true);
-            console.log(`Skipped to time: ${formatTime(newTime)} (${Math.round(newTime * frameRate)} frames)`);
+            console.log(`Skipped to time: ${framesToTime(newFrame, fps)} (${newFrame} frames)`);
         }
 
         function addPause() {
@@ -253,12 +276,16 @@
         }
 
         function setPauseStart() {
-            currentPause.start = player.getCurrentTime();
-            alert("Pause start set to: " + formatTime(currentPause.start));
+            const fps = getFPS();
+            const currentFrame = Math.round(player.getCurrentTime() * fps);
+            currentPause.start = currentFrame / fps;
+            alert("Pause start set to: " + framesToTime(currentFrame, fps));
         }
 
         function setPauseEnd() {
-            currentPause.end = player.getCurrentTime();
+            const fps = getFPS();
+            const currentFrame = Math.round(player.getCurrentTime() * fps);
+            currentPause.end = currentFrame / fps;
             if (currentPause.end <= currentPause.start) {
                 alert("Pause end must be after pause start.");
                 return;
@@ -276,40 +303,31 @@
             updatePauseList();
         }
 
-        // This function sets the start time based on the current position
         function setStartTime() {
-            const currentTime = player.getCurrentTime();
-
-            // Get the frame count based on current time (round to nearest frame)
-            const currentFrame = Math.round(currentTime * frameRate);
-
-            // Now set startTime using that frame directly (without extra conversion back to time)
-            startTime = currentFrame / frameRate;  // Convert back to time for consistency
-
+            const fps = getFPS();
+            const currentFrame = Math.round(player.getCurrentTime() * fps);
+            startTime = currentFrame / fps;
             updateModNote();
         }
-
 
         function setEndTime() {
-            const currentTime = player.getCurrentTime();
-            // Get the frame count based on current time (rounding the time to the closest frame)
-            const currentFrame = Math.round(currentTime * frameRate);
-            endTime = currentFrame / frameRate; // Convert back to time for consistency
-
+            const fps = getFPS();
+            const currentFrame = Math.round(player.getCurrentTime() * fps);
+            endTime = currentFrame / fps;
             updateModNote();
         }
 
-
-
         function updateModNote() {
+            const fps = getFPS();
             let pauseText = "";
             if (pauses.length > 0) {
                 pauseText = ` with pauses ${pauses.map(p => `${p.label ? `[${p.label}] ` : ""}from ${formatTime(p.start)} to ${formatTime(p.end)}`).join(" and ")}`;
             }
             const totalPauseTime = pauses.reduce((total, p) => total + (p.end - p.start), 0);
             const totalTime = Math.max(0, endTime - startTime - totalPauseTime);
-            const finalFrames = Math.round(totalTime * frameRate);
-            document.getElementById('modNote').innerText = `Mod Message: Time starts at ${formatTime(startTime)} and ends at ${formatTime(endTime)}${pauseText} with a framerate of ${frameRate} FPS to get a final time of ${formatTime(totalTime)} (${finalFrames} frames)`;
+            const finalFrames = Math.round(totalTime * fps);
+            document.getElementById('modNote').innerText =
+                `Mod Message: Time starts at ${formatTime(startTime)} and ends at ${formatTime(endTime)}${pauseText} with a framerate of ${fps} FPS to get a final time of ${framesToTime(finalFrames, fps)} (${finalFrames} frames)`;
         }
 
         function updatePauseList() {
@@ -319,7 +337,7 @@
                 const pauseItem = document.createElement('div');
                 pauseItem.className = 'pause-item';
                 pauseItem.innerHTML = `${pause.label ? `[${pause.label}] ` : ""}From ${formatTime(pause.start)} to ${formatTime(pause.end)} 
-          <button onclick="deletePause(${index})">Delete</button>`;
+        <button onclick="deletePause(${index})">Delete</button>`;
                 pauseListDiv.appendChild(pauseItem);
             });
         }
@@ -349,10 +367,10 @@
         }
 
         function displayCurrentFrame() {
+            const fps = getFPS();
             if (player) {
-                const seconds = player.getCurrentTime();
-                const frames = Math.round(seconds * frameRate);
-                alert(`Current Time: ${formatTime(seconds)} (${frames} frames)`);
+                const currentFrame = Math.round(player.getCurrentTime() * fps);
+                alert(`Current Time: ${framesToTime(currentFrame, fps)} (${currentFrame} frames)`);
             }
         }
 
@@ -362,7 +380,7 @@
                 startTime,
                 endTime,
                 pauses,
-                frameRate
+                frameRate: getFPS()
             };
             const blob = new Blob([JSON.stringify(runData, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -372,7 +390,6 @@
             a.click();
         }
 
-        // Keyboard Shortcuts
         document.addEventListener('keydown', (e) => {
             if (e.key.toLowerCase() === 's') setStartTime();
             if (e.key.toLowerCase() === 'e') setEndTime();
@@ -380,5 +397,4 @@
         });
     </script>
 </body>
-
 </html>
