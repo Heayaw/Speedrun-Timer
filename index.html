@@ -149,20 +149,20 @@
             <button onclick="skipFrames(10)">+10F</button>
         </div>
         <div class="control-box">
-            <button onclick="skipFrames(-600)">-10S</button>
-            <button onclick="skipFrames(-300)">-5S</button>
-            <button onclick="skipFrames(-60)">-1S</button>
-            <button onclick="skipFrames(60)">+1S</button>
-            <button onclick="skipFrames(300)">+5S</button>
-            <button onclick="skipFrames(600)">+10S</button>
+            <button onclick="skipSeconds(-10)">-10S</button>
+            <button onclick="skipSeconds(-5)">-5S</button>
+            <button onclick="skipSeconds(-1)">-1S</button>
+            <button onclick="skipSeconds(1)">+1S</button>
+            <button onclick="skipSeconds(5)">+5S</button>
+            <button onclick="skipSeconds(10)">+10S</button>
         </div>
         <div class="control-box">
-            <button onclick="skipFrames(-36000)">-10M</button>
-            <button onclick="skipFrames(-18000)">-5M</button>
-            <button onclick="skipFrames(-3600)">-1M</button>
-            <button onclick="skipFrames(3600)">+1M</button>
-            <button onclick="skipFrames(18000)">+5M</button>
-            <button onclick="skipFrames(36000)">+10M</button>
+            <button onclick="skipSeconds(-600)">-10M</button>
+            <button onclick="skipSeconds(-300)">-5M</button>
+            <button onclick="skipSeconds(-60)">-1M</button>
+            <button onclick="skipSeconds(60)">+1M</button>
+            <button onclick="skipSeconds(300)">+5M</button>
+            <button onclick="skipSeconds(600)">+10M</button>
         </div>
         <div class="mod-controls">
             <button onclick="addPause()">Add Pause</button>
@@ -240,7 +240,6 @@
             console.log("YouTube Player is ready.");
         }
 
-        // Convert frames → exact time string
         function framesToTime(frame, fps) {
             const ms = Math.round(frame * (1000 / fps));
             const minutes = Math.floor(ms / 60000);
@@ -249,7 +248,6 @@
             return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
         }
 
-        // Format time from seconds (via frames)
         function formatTime(seconds) {
             const fps = getFPS();
             const frames = Math.round(seconds * fps);
@@ -264,6 +262,16 @@
             const newTime = newFrame / fps;
             player.seekTo(newTime, true);
             console.log(`Skipped to time: ${framesToTime(newFrame, fps)} (${newFrame} frames)`);
+        }
+
+        function skipSeconds(seconds) {
+            const currentTime = player.getCurrentTime();
+            const newTime = currentTime + seconds;
+            player.seekTo(newTime, true);
+
+            const fps = getFPS();
+            const newFrame = Math.round(newTime * fps);
+            console.log(`Skipped ${seconds} seconds → ${framesToTime(newFrame, fps)} (${newFrame} frames)`);
         }
 
         function addPause() {
@@ -411,6 +419,7 @@
     </script>
 </body>
 </html>
+
 
 
 
