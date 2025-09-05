@@ -4,140 +4,53 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>YouTube Video Frame Control</title>
+    <title>Speedrun Video Timer</title>
     <link rel="icon" href="data:,">
+    <script src="https://cdn.jsdelivr.net/npm/mediainfo.js/dist/mediainfo.min.js"></script>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 40px;
-            text-align: center;
-            background-color: #0e0e0e;
-            color: #f0f0f0;
-        }
-
-        h1 {
-            font-size: 2em;
-            margin-bottom: 20px;
-            color: #ffffff;
-        }
-
-        input[type="text"],
-        input[type="number"] {
-            background-color: #1e1e1e;
-            color: #fff;
-            border: 1px solid #555;
-            padding: 10px;
-            border-radius: 8px;
-            width: 280px;
-            margin-bottom: 10px;
-            transition: border-color 0.3s;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: #ff5050;
-        }
-
-        button {
-            margin: 5px;
-            padding: 10px;
-            font-size: 14px;
-            background: linear-gradient(120deg, #444, #222, #444);
-            background-size: 200% 200%;
-            color: white;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            width: 150px;
-            transition: background-position 0.5s ease, transform 0.2s, box-shadow 0.3s;
-            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.4);
-        }
-
-        button:hover {
-            background-position: right center;
-            transform: scale(1.05);
-            box-shadow: 0 0 12px #ff5050, 0 0 20px rgba(255, 80, 80, 0.2);
-        }
-
-        .controls-container {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-top: 20px;
-        }
-
-        .control-box,
-        .mod-controls {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 15px;
-            background: #1c1c1c;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
-            min-width: 180px;
-        }
-
-        #modNote {
-            margin-top: 25px;
-            font-weight: bold;
-            color: #ff5050;
-            background-color: #1a1a1a;
-            padding: 10px;
-            border-radius: 8px;
-            max-width: 800px;
-            margin-left: auto;
-            margin-right: auto;
-            box-shadow: inset 0 0 10px rgba(255, 80, 80, 0.2);
-        }
-
-        .pause-list {
-            margin-top: 20px;
-            color: #ffde59;
-        }
-
-        .pause-item {
-            margin: 8px auto;
-            padding: 10px;
-            background-color: #2c2c2c;
-            border-radius: 8px;
-            max-width: 500px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
-        }
-
-        .pause-item button {
-            background-color: #880000;
-            width: auto;
-            padding: 5px 10px;
-            font-size: 12px;
-            transition: background-color 0.3s, box-shadow 0.3s;
-        }
-
-        .pause-item button:hover {
-            background-color: #bb0000;
-            box-shadow: 0 0 8px #ff4c4c;
-        }
-
-        #pauseSection {
-            margin-top: 10px;
-        }
+        body {font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;margin:40px;text-align:center;background-color:#0e0e0e;color:#f0f0f0}
+        h1{font-size:2em;margin-bottom:20px;color:#fff}
+        input[type="text"],input[type="number"],input[type="file"],select{background-color:#1e1e1e;color:#fff;border:1px solid #555;padding:10px;border-radius:8px;width:280px;margin-bottom:10px;transition:border-color .3s}
+        input:focus,select:focus{outline:none;border-color:#ff5050}
+        button{margin:5px;padding:10px;font-size:14px;background:linear-gradient(120deg,#444,#222,#444);background-size:200% 200%;color:white;border:none;border-radius:6px;cursor:pointer;width:150px;transition:background-position .5s ease,transform .2s,box-shadow .3s;box-shadow:0 3px 6px rgba(0,0,0,.4)}
+        button:hover{background-position:right center;transform:scale(1.05);box-shadow:0 0 12px #ff5050,0 0 20px rgba(255,80,80,.2)}
+        .controls-container{display:flex;justify-content:center;flex-wrap:wrap;gap:20px;margin-top:20px}
+        .control-box,.mod-controls{display:flex;flex-direction:column;align-items:center;padding:15px;background:#1c1c1c;border-radius:12px;box-shadow:0 4px 12px rgba(0,0,0,.6);min-width:180px}
+        #modNote{margin-top:25px;font-weight:bold;color:#ff5050;background-color:#1a1a1a;padding:10px;border-radius:8px;max-width:800px;margin-left:auto;margin-right:auto;box-shadow:inset 0 0 10px rgba(255,80,80,.2)}
+        .pause-list{margin-top:20px;color:#ffde59}
+        .pause-item{margin:8px auto;padding:10px;background-color:#2c2c2c;border-radius:8px;max-width:500px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 6px rgba(0,0,0,.5)}
+        .pause-item button{background-color:#880000;width:auto;padding:5px 10px;font-size:12px;transition:background-color .3s,box-shadow .3s}
+        .pause-item button:hover{background-color:#bb0000;box-shadow:0 0 8px #ff4c4c}
+        #pauseSection{margin-top:10px}
     </style>
 </head>
 
 <body>
     <h1>Speedrun Video Timer</h1>
-    <input type="text" id="videoUrl" placeholder="Enter YouTube URL" style="width: 300px;">
-    <input type="number" id="fpsInput" value="60" min="1" max="240" style="width: 120px;">
-    <button onclick="loadVideo()">Load Video</button>
-    <button onclick="resetRun()">Reset Run</button>
-    <br><br>
 
-    <div id="youtubePlayer"></div>
-    <br>
+    <h2>Select Video Source</h2>
+    <select id="videoSource" onchange="switchSource()">
+        <option value="youtube">YouTube</option>
+        <option value="medal">Medal</option>
+        <option value="file">Local File</option>
+    </select><br><br>
+
+    <div id="youtubeSection">
+        <input type="text" id="videoUrl" placeholder="Enter YouTube URL" style="width:300px;">
+        <button onclick="loadVideo()">Load YouTube Video</button>
+    </div>
+    <div id="medalSection" style="display:none;">
+        <input type="text" id="medalUrl" placeholder="Enter Medal Clip URL" style="width:300px;">
+        <button onclick="loadMedal()">Load Medal Clip</button>
+    </div>
+    <div id="fileSection" style="display:none;">
+        <input type="file" id="videoFile" accept="video/*">
+    </div><br>
+
+    <input type="number" id="fpsInput" value="60" min="1" max="240" style="width:120px;">
+    <button onclick="resetRun()">Reset Run</button><br><br>
+
+    <div id="youtubePlayer"></div><br>
 
     <div class="controls-container">
         <div class="control-box">
@@ -169,8 +82,7 @@
             <div id="pauseSection" style="display:none;">
                 <button onclick="setPauseStart()">Set Pause Start</button>
                 <button onclick="setPauseEnd()">Set Pause End</button>
-            </div>
-            <br>
+            </div><br>
             <button onclick="setStartTime()">Set Start Time</button>
             <button onclick="setEndTime()">Set End Time</button>
             <button onclick="displayCurrentFrame()">Show Current Frame</button>
@@ -183,244 +95,42 @@
     <div class="pause-list" id="pauseList"></div>
 
     <script>
-        let player;
-        let startTime = 0;
-        let endTime = 0;
-        let pauses = [];
-        let currentPause = null;
+        let player, startTime=0, endTime=0, pauses=[], currentPause=null;
 
-        function getFPS() {
-            const fps = parseFloat(document.getElementById('fpsInput').value);
-            const finalFPS = (fps && fps > 0) ? fps : 60;
-            console.log(`FPS set to: ${finalFPS}`);
-            return finalFPS;
-        }
+        function switchSource(){["youtube","medal","file"].forEach(s=>document.getElementById(s+"Section").style.display="none");document.getElementById(document.getElementById("videoSource").value+"Section").style.display="block"}
+        async function detectFPSFromUrl(url){const mi=await MediaInfo({format:'object'});const res=await fetch(url);const buf=await res.arrayBuffer();const r=await mi.analyzeData(()=>buf.byteLength,(sz,off)=>new Uint8Array(buf.slice(off,off+sz)));const t=r.media.track.find(t=>t.FrameRate);return t&&t.FrameRate?parseFloat(t.FrameRate):60}
+        async function detectFPS(file){const mi=await MediaInfo({format:'object'});return new Promise(res=>{const fr=new FileReader();fr.onload=async e=>{const r=await mi.analyzeData(()=>file.size,(sz,off)=>new Uint8Array(e.target.result.slice(off,off+sz)));const t=r.media.track.find(t=>t.FrameRate);res(t&&t.FrameRate?parseFloat(t.FrameRate):60)};fr.readAsArrayBuffer(file)})}
+        function getFPS(){const fps=parseFloat(document.getElementById('fpsInput').value);return (fps&&fps>0)?fps:60}
 
-        function loadYouTubeAPI() {
-            const script = document.createElement('script');
-            script.src = "https://www.youtube.com/iframe_api";
-            document.body.appendChild(script);
-        }
-        loadYouTubeAPI();
+        function loadYouTubeAPI(){const s=document.createElement('script');s.src="https://www.youtube.com/iframe_api";document.body.appendChild(s)} loadYouTubeAPI();
+        function onYouTubeIframeAPIReady(){}
+        function loadVideo(){resetRun();let url=document.getElementById('videoUrl').value.trim(),id=null;try{const u=new URL(url);if(u.hostname.includes("youtu.be"))id=u.pathname.slice(1);else if(u.searchParams.has("v"))id=u.searchParams.get("v")}catch(e){alert("Invalid YouTube URL");return}if(id){player=new YT.Player('youtubePlayer',{height:'340',width:'600',videoId:id,playerVars:{'autoplay':1,'enablejsapi':1}})}else alert("Invalid YouTube URL")}
+        async function loadMedal(){resetRun();const m=document.getElementById("medalUrl").value.trim();try{const res=await fetch(m);const html=await res.text();const match=html.match(/"contentUrl":"(https[^"]+)"/);if(!match){alert("Could not find Medal video.");return}const v=match[1];const el=document.createElement("video");el.controls=true;el.width=600;el.height=340;el.src=v;document.getElementById("youtubePlayer").innerHTML="";document.getElementById("youtubePlayer").appendChild(el);player=el;const fps=await detectFPSFromUrl(v);document.getElementById("fpsInput").value=fps}catch(e){console.error(e);alert("Failed to load Medal clip.")}}
+        document.getElementById("videoFile").addEventListener("change",async e=>{if(e.target.files.length>0){resetRun();const f=e.target.files[0];const el=document.createElement("video");el.controls=true;el.width=600;el.height=340;el.src=URL.createObjectURL(f);document.getElementById("youtubePlayer").innerHTML="";document.getElementById("youtubePlayer").appendChild(el);player=el;const fps=await detectFPS(f);document.getElementById("fpsInput").value=fps}})
 
-        function onYouTubeIframeAPIReady() {
-            console.log("YouTube API loaded.");
-        }
+        function getCurrentTimeSafe(){if(player instanceof HTMLVideoElement)return player.currentTime;else if(player&&player.getCurrentTime)return player.getCurrentTime();return 0}
+        function seekToSafe(t){if(player instanceof HTMLVideoElement)player.currentTime=t;else if(player&&player.seekTo)player.seekTo(t,true)}
 
-        function loadVideo() {
-            resetRun();
-            let url = document.getElementById('videoUrl').value.trim();
-            let videoId = null;
-            try {
-                const urlObj = new URL(url);
-                if (urlObj.hostname.includes("youtu.be")) {
-                    videoId = urlObj.pathname.slice(1);
-                } else if (urlObj.searchParams.has("v")) {
-                    videoId = urlObj.searchParams.get("v");
-                }
-            } catch (e) {
-                alert("Invalid YouTube URL");
-                return;
-            }
+        function framesToTime(f,fps){const ms=Math.round(f*(1000/fps)),m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),ms2=ms%1000;return `${m}:${s.toString().padStart(2,'0')}.${ms2.toString().padStart(3,'0')}`}
+        function formatTime(sec){const fps=getFPS();return framesToTime(Math.round(sec*fps),fps)}
+        function skipFrames(f){const fps=getFPS(),cur=getCurrentTimeSafe(),fr=Math.round(cur*fps),newT=(fr+f)/fps;seekToSafe(newT)}
+        function skipSeconds(s){seekToSafe(getCurrentTimeSafe()+s)}
 
-            if (videoId) {
-                player = new YT.Player('youtubePlayer', {
-                    height: '340',
-                    width: '600',
-                    videoId: videoId,
-                    playerVars: { 'autoplay': 1, 'enablejsapi': 1 },
-                    events: { 'onReady': onPlayerReady }
-                });
-            } else {
-                alert("Invalid YouTube URL");
-            }
-        }
+        function addPause(){currentPause={start:null,end:null};document.getElementById("pauseSection").style.display="block"}
+        function setPauseStart(){if(currentPause){currentPause.start=getCurrentTimeSafe();updateModNote()}}
+        function setPauseEnd(){if(currentPause&&currentPause.start!=null){currentPause.end=getCurrentTimeSafe();pauses.push(currentPause);currentPause=null;document.getElementById("pauseSection").style.display="none";renderPauses();updateModNote()}}
+        function renderPauses(){const l=document.getElementById("pauseList");l.innerHTML="";pauses.forEach((p,i)=>{const d=document.createElement("div");d.className="pause-item";d.innerHTML=`Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)} <button onclick="removePause(${i})">Remove</button>`;l.appendChild(d)})}
+        function removePause(i){pauses.splice(i,1);renderPauses();updateModNote()}
 
-        function onPlayerReady(event) {
-            console.log("YouTube Player is ready.");
-        }
+        function setStartTime(){startTime=getCurrentTimeSafe();updateModNote()}
+        function setEndTime(){endTime=getCurrentTimeSafe();updateModNote()}
+        function displayCurrentFrame(){alert("Current Frame: "+Math.round(getCurrentTimeSafe()*getFPS()))}
 
-        function framesToTime(frame, fps) {
-            const ms = Math.round(frame * (1000 / fps));
-            const minutes = Math.floor(ms / 60000);
-            const seconds = Math.floor((ms % 60000) / 1000);
-            const milliseconds = ms % 1000;
-            return `${minutes}:${seconds.toString().padStart(2, '0')}.${milliseconds.toString().padStart(3, '0')}`;
-        }
+        function updateModNote(){if(!startTime||!endTime){document.getElementById("modNote").innerText="Set both start and end times.";return}const fps=getFPS();let total=endTime-startTime;pauses.forEach(p=>{if(p.start&&p.end)total-=(p.end-p.start)});document.getElementById("modNote").innerText=`Start: ${formatTime(startTime)} | End: ${formatTime(endTime)}\nFinal Time: ${formatTime(total)} (${Math.round(total*fps)} frames at ${fps} FPS)`}
 
-        function formatTime(seconds) {
-            const fps = getFPS();
-            const frames = Math.round(seconds * fps);
-            return framesToTime(frames, fps);
-        }
-
-        function skipFrames(frames) {
-            const fps = getFPS();
-            const currentTime = player.getCurrentTime();
-            const currentFrame = Math.round(currentTime * fps);
-            const newFrame = currentFrame + frames;
-            const newTime = newFrame / fps;
-            player.seekTo(newTime, true);
-            console.log(`Skipped to time: ${framesToTime(newFrame, fps)} (${newFrame} frames)`);
-        }
-
-        function skipSeconds(seconds) {
-            const currentTime = player.getCurrentTime();
-            const newTime = currentTime + seconds;
-            player.seekTo(newTime, true);
-
-            const fps = getFPS();
-            const newFrame = Math.round(newTime * fps);
-            console.log(`Skipped ${seconds} seconds → ${framesToTime(newFrame, fps)} (${newFrame} frames)`);
-        }
-
-        function addPause() {
-            if (!player) {
-            alert("Load a video first!");
-            return;
-            }
-            if (currentPause) {
-                alert("Finish the current pause before adding a new one!");
-                return;
-            }
-            document.getElementById("pauseSection").style.display = "block";
-            currentPause = { start: null, end: null, label: "" };
-            }
-
-
-        function setPauseStart() {
-            if (!currentPause) return alert("Click 'Add Pause' first!");
-            const fps = getFPS();
-            const currentFrame = Math.round(player.getCurrentTime() * fps);
-            currentPause.start = currentFrame / fps;
-            alert("Pause start set to: " + framesToTime(currentFrame, fps));
-        }
-
-
-        function setPauseEnd() {
-            if (!currentPause) return alert("Click 'Add Pause' first!");
-            if (currentPause.start === null) return alert("Set pause start first!");
-    
-            const fps = getFPS();
-         const currentFrame = Math.round(player.getCurrentTime() * fps);
-            currentPause.end = currentFrame / fps;
-    
-            if (currentPause.end <= currentPause.start) {
-                return alert("Pause end must be after pause start.");
-            }
-    
-            currentPause.label = prompt("Optional: Name this pause (e.g., 'Cutscene')") || "";
-            pauses.push(currentPause);
-            currentPause = null; // RESET so a new pause can be added
-            updateModNote();
-            updatePauseList();
-            document.getElementById("pauseSection").style.display = "none";
-        }   
-
-
-        function deletePause(index) {
-            pauses.splice(index, 1);
-            updateModNote();
-            updatePauseList();
-        }
-
-        function setStartTime() {
-            const fps = getFPS();
-            const currentFrame = Math.round(player.getCurrentTime() * fps);
-            startTime = currentFrame / fps;
-            updateModNote();
-        }
-
-        function setEndTime() {
-            const fps = getFPS();
-            const currentFrame = Math.round(player.getCurrentTime() * fps);
-            endTime = currentFrame / fps;
-            updateModNote();
-        }
-
-        function updateModNote() {
-            const fps = getFPS();
-            let pauseText = "";
-            if (pauses.length > 0) {
-                pauseText = ` with pauses ${pauses.map(p => `${p.label ? `[${p.label}] ` : ""}from ${formatTime(p.start)} to ${formatTime(p.end)}`).join(" and ")}`;
-            }
-            const totalPauseTime = pauses.reduce((total, p) => total + (p.end - p.start), 0);
-            const totalTime = Math.max(0, endTime - startTime - totalPauseTime);
-            const finalFrames = Math.round(totalTime * fps);
-            document.getElementById('modNote').innerText =
-                `Mod Message: Time starts at ${formatTime(startTime)} and ends at ${formatTime(endTime)}${pauseText} with a framerate of ${fps} FPS to get a final time of ${framesToTime(finalFrames, fps)} (${finalFrames} frames)`;
-        }
-
-        function updatePauseList() {
-            const pauseListDiv = document.getElementById('pauseList');
-            pauseListDiv.innerHTML = '';
-            pauses.forEach((pause, index) => {
-                const pauseItem = document.createElement('div');
-                pauseItem.className = 'pause-item';
-                pauseItem.innerHTML = `${pause.label ? `[${pause.label}] ` : ""}From ${formatTime(pause.start)} to ${formatTime(pause.end)} 
-        <button onclick="deletePause(${index})">Delete</button>`;
-                pauseListDiv.appendChild(pauseItem);
-            });
-        }
-
-        function resetRun() {
-            if (player) {
-                player.destroy();
-                document.getElementById('youtubePlayer').innerHTML = '';
-            }
-            pauses = [];
-            startTime = 0;
-            endTime = 0;
-            document.getElementById('modNote').innerText = '';
-            document.getElementById('pauseList').innerHTML = '';
-            document.getElementById("pauseSection").style.display = "none";
-        }
-
-        function copyModMessage() {
-            const modMessage = document.getElementById('modNote').innerText;
-            if (modMessage) {
-                navigator.clipboard.writeText(modMessage).then(() => {
-                    alert("Mod Message copied to clipboard!");
-                });
-            } else {
-                alert("No mod message to copy.");
-            }
-        }
-
-        function displayCurrentFrame() {
-            const fps = getFPS();
-            if (player) {
-                const currentFrame = Math.round(player.getCurrentTime() * fps);
-                alert(`Current Time: ${framesToTime(currentFrame, fps)} (${currentFrame} frames)`);
-            }
-        }
-
-        function exportRunData() {
-            const runData = {
-                videoUrl: document.getElementById('videoUrl').value,
-                startTime,
-                endTime,
-                pauses,
-                frameRate: getFPS()
-            };
-            const blob = new Blob([JSON.stringify(runData, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'runData.json';
-            a.click();
-        }
-
-        document.addEventListener('keydown', (e) => {
-            if (e.key.toLowerCase() === 's') setStartTime();
-            if (e.key.toLowerCase() === 'e') setEndTime();
-            if (e.key.toLowerCase() === 'p') addPause();
-        });
+        function exportRunData(){const d={startTime, endTime, pauses, fps:getFPS()};const blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="run_data.json";a.click()}
+        function copyModMessage(){const t=document.getElementById("modNote").innerText;if(!t)return;navigator.clipboard.writeText(t).then(()=>alert("Copied to clipboard!"))}
+        function resetRun(){startTime=0;endTime=0;pauses=[];currentPause=null;document.getElementById("pauseList").innerHTML="";document.getElementById("pauseSection").style.display="none";document.getElementById("modNote").innerText=""}
     </script>
 </body>
 </html>
-
-
-
-
-
