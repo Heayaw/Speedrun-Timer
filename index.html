@@ -105,7 +105,7 @@
         function loadYouTubeAPI(){const s=document.createElement('script');s.src="https://www.youtube.com/iframe_api";document.body.appendChild(s)} loadYouTubeAPI();
         function onYouTubeIframeAPIReady(){}
         function loadVideo(){resetRun();let url=document.getElementById('videoUrl').value.trim(),id=null;try{const u=new URL(url);if(u.hostname.includes("youtu.be"))id=u.pathname.slice(1);else if(u.searchParams.has("v"))id=u.searchParams.get("v")}catch(e){alert("Invalid YouTube URL");return}if(id){player=new YT.Player('youtubePlayer',{height:'340',width:'600',videoId:id,playerVars:{'autoplay':1,'enablejsapi':1}})}else alert("Invalid YouTube URL")}
-        async function loadMedal(){resetRun();const m=document.getElementById("medalUrl").value.trim();try{const res=await fetch(m);const html=await res.text();const match=html.match(/"contentUrl":"(https[^"]+)"/);if(!match){alert("Could not find Medal video.");return}const v=match[1];const el=document.createElement("video");el.controls=true;el.width=600;el.height=340;el.src=v;document.getElementById("youtubePlayer").innerHTML="";document.getElementById("youtubePlayer").appendChild(el);player=el;const fps=await detectFPSFromUrl(v);document.getElementById("fpsInput").value=fps}catch(e){console.error(e);alert("Failed to load Medal clip.")}}
+        async function loadMedal(){resetRun();try{const m=document.getElementById("medalUrl").value.trim(),r=await fetch("https://medal.tv/oembed?url="+encodeURIComponent(m)),j=await r.json(),v=(j.html.match(/src="([^"]+\.mp4)"/)||[])[1];if(!v)return alert("Could not find Medal video.");const el=document.createElement("video");el.controls=true;el.width=600;el.height=340;el.src=v;document.getElementById("youtubePlayer").innerHTML="";document.getElementById("youtubePlayer").appendChild(el);player=el;document.getElementById("fpsInput").value=await detectFPSFromUrl(v)}catch(e){console.error(e);alert("Failed to load Medal clip.")}}
         document.getElementById("videoFile").addEventListener("change",async e=>{if(e.target.files.length>0){resetRun();const f=e.target.files[0];const el=document.createElement("video");el.controls=true;el.width=600;el.height=340;el.src=URL.createObjectURL(f);document.getElementById("youtubePlayer").innerHTML="";document.getElementById("youtubePlayer").appendChild(el);player=el;const fps=await detectFPS(f);document.getElementById("fpsInput").value=fps}})
 
         function getCurrentTimeSafe(){if(player instanceof HTMLVideoElement)return player.currentTime;else if(player&&player.getCurrentTime)return player.getCurrentTime();return 0}
@@ -134,3 +134,4 @@
     </script>
 </body>
 </html>
+
