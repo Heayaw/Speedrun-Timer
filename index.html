@@ -126,7 +126,24 @@
         function setEndTime(){endTime=getCurrentTimeSafe();updateModNote()}
         function displayCurrentFrame(){alert("Current Frame: "+Math.round(getCurrentTimeSafe()*getFPS()))}
 
-        function updateModNote(){if(!startTime||!endTime){document.getElementById("modNote").innerText="Set both start and end times.";return}const fps=getFPS();let total=endTime-startTime;pauses.forEach(p=>{if(p.start&&p.end)total-=(p.end-p.start)});document.getElementById("modNote").innerText=`Start: ${formatTime(startTime)} | End: ${formatTime(endTime)}\nFinal Time: ${formatTime(total)} (${Math.round(total*fps)} frames at ${fps} FPS)`}
+        function updateModNote(){
+            if(startTime === 0 || endTime === 0){
+                document.getElementById("modNote").innerText="Set both start and end times.";
+                return;
+            }
+            const fps=getFPS();
+            let total=endTime-startTime;
+            pauses.forEach(p=>{if(p.start&&p.end)total-=(p.end-p.start)});
+
+            let timeline=`Start: ${formatTime(startTime)}`;
+            pauses.forEach((p,i)=>{
+                timeline+=` | Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)}`;
+            });
+            timeline+=` | End: ${formatTime(endTime)}`;
+
+            document.getElementById("modNote").innerText=
+                `${timeline}\nFinal Time: ${formatTime(total)} (${Math.round(total*fps)} frames at ${fps} FPS)`;
+        }
 
         function exportRunData(){const d={startTime, endTime, pauses, fps:getFPS()};const blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="run_data.json";a.click()}
         function copyModMessage(){const t=document.getElementById("modNote").innerText;if(!t)return;navigator.clipboard.writeText(t).then(()=>alert("Copied to clipboard!"))}
@@ -134,4 +151,3 @@
     </script>
 </body>
 </html>
-
