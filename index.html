@@ -97,237 +97,50 @@
     <script>
         let player, startTime=0, endTime=0, pauses=[], currentPause=null;
 
-        // ---- Player management ----
-        function clearPlayer() {
-            const container = document.getElementById("youtubePlayer");
-            if (!container) return;
+        function switchSource(){["youtube","medal","file"].forEach(s=>document.getElementById(s+"Section").style.display="none");document.getElementById(document.getElementById("videoSource").value+"Section").style.display="block"}
+        async function detectFPSFromUrl(url){const mi=await MediaInfo({format:'object'});const res=await fetch(url);const buf=await res.arrayBuffer();const r=await mi.analyzeData(()=>buf.byteLength,(sz,off)=>new Uint8Array(buf.slice(off,off+sz)));const t=r.media.track.find(t=>t.FrameRate);return t&&t.FrameRate?parseFloat(t.FrameRate):60}
+        async function detectFPS(file){const mi=await MediaInfo({format:'object'});return new Promise(res=>{const fr=new FileReader();fr.onload=async e=>{const r=await mi.analyzeData(()=>file.size,(sz,off)=>new Uint8Array(e.target.result.slice(off,off+sz)));const t=r.media.track.find(t=>t.FrameRate);res(t&&t.FrameRate?parseFloat(t.FrameRate):60)};fr.readAsArrayBuffer(file)})}
+        function getFPS(){const fps=parseFloat(document.getElementById('fpsInput').value);return (fps&&fps>0)?fps:60}
 
-            // Destroy YouTube player if it exists
-            if (player && player.destroy) player.destroy();
+        function loadYouTubeAPI(){const s=document.createElement('script');s.src="https://www.youtube.com/iframe_api";document.body.appendChild(s)} loadYouTubeAPI();
+        function onYouTubeIframeAPIReady(){}
+        function clearPlayer(){const c=document.getElementById("youtubePlayer");if(player&&player.destroy)player.destroy();c.innerHTML="";player=null}
+        function loadVideo(){resetRun();clearPlayer();let url=document.getElementById('videoUrl').value.trim(),id=null;try{const u=new URL(url);if(u.hostname.includes("youtu.be"))id=u.pathname.slice(1);else if(u.searchParams.has("v"))id=u.searchParams.get("v")}catch(e){alert("Invalid YouTube URL");return}if(id){const container=document.getElementById("youtubePlayer");container.innerHTML="";player=new YT.Player('youtubePlayer',{height:'340',width:'600',videoId:id,playerVars:{'autoplay':1,'enablejsapi':1}})}else alert("Invalid YouTube URL")}
+        async function loadMedal(){resetRun();clearPlayer();try{const m=document.getElementById("medalUrl").value.trim(),r=await fetch("https://medal.tv/oembed?url="+encodeURIComponent(m)),j=await r.json(),v=(j.html.match(/src="([^"]+\.mp4)"/)||[])[1];if(!v)return alert("Could not find Medal video.");const container=document.getElementById("youtubePlayer");container.innerHTML="";const el=document.createElement("video");el.controls=true;el.width=600;el.height=340;el.src=v;container.appendChild(el);player=el;document.getElementById("fpsInput").value=await detectFPSFromUrl(v)}catch(e){console.error(e);alert("Failed to load Medal clip.")}}
+        document.getElementById("videoFile").addEventListener("change",async e=>{if(e.target.files.length>0){resetRun();clearPlayer();const f=e.target.files[0];const el=document.createElement("video");el.controls=true;el.width=600;el.height=340;el.src=URL.createObjectURL(f);document.getElementById("youtubePlayer").appendChild(el);player=el;const fps=await detectFPS(f);document.getElementById("fpsInput").value=fps}})
 
-            // Remove HTML/video elements
-            container.innerHTML = "";
-            player = null;
+        function getCurrentTimeSafe(){if(player instanceof HTMLVideoElement)return player.currentTime;else if(player&&player.getCurrentTime)return player.getCurrentTime();return 0}
+        function seekToSafe(t){if(player instanceof HTMLVideoElement)player.currentTime=t;else if(player&&player.seekTo)player.seekTo(t,true)}
+
+        function framesToTime(f,fps){const ms=Math.round(f*(1000/fps)),m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),ms2=ms%1000;return `${m}:${s.toString().padStart(2,'0')}.${ms2.toString().padStart(3,'0')}`}
+        function formatTime(sec){const fps=getFPS();return framesToTime(Math.round(sec*fps),fps)}
+        function skipFrames(f){const fps=getFPS(),cur=getCurrentTimeSafe(),fr=Math.round(cur*fps),newT=(fr+f)/fps;seekToSafe(newT)}
+        function skipSeconds(s){seekToSafe(getCurrentTimeSafe()+s)}
+
+        function addPause(){currentPause={start:null,end:null};document.getElementById("pauseSection").style.display="block"}
+        function setPauseStart(){if(currentPause){currentPause.start=getCurrentTimeSafe();updateModNote()}}
+        function setPauseEnd(){if(currentPause&&currentPause.start!=null){currentPause.end=getCurrentTimeSafe();pauses.push(currentPause);currentPause=null;document.getElementById("pauseSection").style.display="none";renderPauses();updateModNote()}}
+        function renderPauses(){const l=document.getElementById("pauseList");l.innerHTML="";pauses.forEach((p,i)=>{const d=document.createElement("div");d.className="pause-item";d.innerHTML=`Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)} <button onclick="removePause(${i})">Remove</button>`;l.appendChild(d)})}
+        function removePause(i){pauses.splice(i,1);renderPauses();updateModNote()}
+
+        function setStartTime(){startTime=getCurrentTimeSafe();updateModNote()}
+        function setEndTime(){endTime=getCurrentTimeSafe();updateModNote()}
+        function displayCurrentFrame(){alert("Current Frame: "+Math.round(getCurrentTimeSafe()*getFPS()))}
+
+        function updateModNote(){
+            if(startTime === 0 || endTime === 0){document.getElementById("modNote").innerText="Set both start and end times.";return;}
+            const fps=getFPS();
+            let total=endTime-startTime;
+            pauses.forEach(p=>{if(p.start&&p.end)total-=(p.end-p.start)});
+            let timeline=`Start: ${formatTime(startTime)}`;
+            pauses.forEach((p,i)=>{timeline+=` | Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)}`;});
+            timeline+=` | End: ${formatTime(endTime)}`;
+            document.getElementById("modNote").innerText=`${timeline}\nFinal Time: ${formatTime(total)} (${Math.round(total*fps)} frames at ${fps} FPS)`;
         }
 
-        function switchSource() {
-            clearPlayer();
-            resetRun();
-
-            ["youtube","medal","file"].forEach(s => 
-                document.getElementById(s + "Section").style.display = "none"
-            );
-
-            const selected = document.getElementById("videoSource").value;
-            document.getElementById(selected + "Section").style.display = "block";
-        }
-
-        async function detectFPSFromUrl(url) {
-            const mi = await MediaInfo({ format:'object' });
-            const res = await fetch(url);
-            const buf = await res.arrayBuffer();
-            const r = await mi.analyzeData(() => buf.byteLength, (sz, off) => new Uint8Array(buf.slice(off, off + sz)));
-            const t = r.media.track.find(t => t.FrameRate);
-            return t && t.FrameRate ? parseFloat(t.FrameRate) : 60;
-        }
-
-        async function detectFPS(file) {
-            const mi = await MediaInfo({ format:'object' });
-            return new Promise(res => {
-                const fr = new FileReader();
-                fr.onload = async e => {
-                    const r = await mi.analyzeData(() => file.size, (sz, off) => new Uint8Array(e.target.result.slice(off, off + sz)));
-                    const t = r.media.track.find(t => t.FrameRate);
-                    res(t && t.FrameRate ? parseFloat(t.FrameRate) : 60);
-                };
-                fr.readAsArrayBuffer(file);
-            });
-        }
-
-        function getFPS() {
-            const fps = parseFloat(document.getElementById('fpsInput').value);
-            return (fps && fps > 0) ? fps : 60;
-        }
-
-        // ---- YouTube API ----
-        function loadYouTubeAPI() {
-            const s = document.createElement('script');
-            s.src = "https://www.youtube.com/iframe_api";
-            document.body.appendChild(s);
-        }
-        loadYouTubeAPI();
-        function onYouTubeIframeAPIReady() {}
-
-        // ---- Load Videos ----
-        function loadVideo() {
-            resetRun();
-            clearPlayer();
-
-            let url = document.getElementById('videoUrl').value.trim(), id = null;
-            try {
-                const u = new URL(url);
-                if (u.hostname.includes("youtu.be")) id = u.pathname.slice(1);
-                else if (u.searchParams.has("v")) id = u.searchParams.get("v");
-            } catch(e) {
-                alert("Invalid YouTube URL");
-                return;
-            }
-
-            if (id) {
-                player = new YT.Player('youtubePlayer', {
-                    height:'340',
-                    width:'600',
-                    videoId:id,
-                    playerVars:{ 'autoplay':1, 'enablejsapi':1 }
-                });
-            } else alert("Invalid YouTube URL");
-        }
-
-        async function loadMedal() {
-            resetRun();
-            clearPlayer();
-            try {
-                const m = document.getElementById("medalUrl").value.trim();
-                const r = await fetch("https://medal.tv/oembed?url="+encodeURIComponent(m));
-                const j = await r.json();
-                const v = (j.html.match(/src="([^"]+\.mp4)"/) || [])[1];
-                if (!v) return alert("Could not find Medal video.");
-                const el = document.createElement("video");
-                el.controls = true;
-                el.width = 600;
-                el.height = 340;
-                el.src = v;
-                document.getElementById("youtubePlayer").appendChild(el);
-                player = el;
-                document.getElementById("fpsInput").value = await detectFPSFromUrl(v);
-            } catch(e) {
-                console.error(e);
-                alert("Failed to load Medal clip.");
-            }
-        }
-
-        document.getElementById("videoFile").addEventListener("change", async e => {
-            if(e.target.files.length > 0){
-                resetRun();
-                clearPlayer();
-                const f = e.target.files[0];
-                const el = document.createElement("video");
-                el.controls = true;
-                el.width = 600;
-                el.height = 340;
-                el.src = URL.createObjectURL(f);
-                document.getElementById("youtubePlayer").appendChild(el);
-                player = el;
-                const fps = await detectFPS(f);
-                document.getElementById("fpsInput").value = fps;
-            }
-        });
-
-        // ---- Player Helpers ----
-        function getCurrentTimeSafe() {
-            if (player instanceof HTMLVideoElement) return player.currentTime;
-            else if (player && player.getCurrentTime) return player.getCurrentTime();
-            return 0;
-        }
-
-        function seekToSafe(t) {
-            if (player instanceof HTMLVideoElement) player.currentTime = t;
-            else if (player && player.seekTo) player.seekTo(t, true);
-        }
-
-        function framesToTime(f, fps) {
-            const ms = Math.round(f*(1000/fps));
-            const m = Math.floor(ms/60000);
-            const s = Math.floor((ms%60000)/1000);
-            const ms2 = ms%1000;
-            return `${m}:${s.toString().padStart(2,'0')}.${ms2.toString().padStart(3,'0')}`;
-        }
-
-        function formatTime(sec) {
-            const fps = getFPS();
-            return framesToTime(Math.round(sec*fps), fps);
-        }
-
-        function skipFrames(f) {
-            const fps = getFPS(), cur = getCurrentTimeSafe(), fr = Math.round(cur*fps), newT = (fr+f)/fps;
-            seekToSafe(newT);
-        }
-
-        function skipSeconds(s) {
-            seekToSafe(getCurrentTimeSafe()+s);
-        }
-
-        // ---- Pause Management ----
-        function addPause() { currentPause = { start:null, end:null }; document.getElementById("pauseSection").style.display="block"; }
-        function setPauseStart() { if(currentPause) { currentPause.start = getCurrentTimeSafe(); updateModNote(); } }
-        function setPauseEnd() { 
-            if(currentPause && currentPause.start!=null) { 
-                currentPause.end = getCurrentTimeSafe(); 
-                pauses.push(currentPause); 
-                currentPause = null; 
-                document.getElementById("pauseSection").style.display="none"; 
-                renderPauses(); 
-                updateModNote(); 
-            } 
-        }
-
-        function renderPauses() {
-            const l = document.getElementById("pauseList");
-            l.innerHTML = "";
-            pauses.forEach((p,i)=>{
-                const d = document.createElement("div");
-                d.className = "pause-item";
-                d.innerHTML = `Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)} <button onclick="removePause(${i})">Remove</button>`;
-                l.appendChild(d);
-            });
-        }
-
-        function removePause(i) { pauses.splice(i,1); renderPauses(); updateModNote(); }
-
-        // ---- Start / End / Display ----
-        function setStartTime() { startTime = getCurrentTimeSafe(); updateModNote(); }
-        function setEndTime() { endTime = getCurrentTimeSafe(); updateModNote(); }
-        function displayCurrentFrame() { alert("Current Frame: "+Math.round(getCurrentTimeSafe()*getFPS())); }
-
-        function updateModNote() {
-            if(startTime === 0 || endTime === 0){
-                document.getElementById("modNote").innerText="Set both start and end times.";
-                return;
-            }
-            const fps = getFPS();
-            let total = endTime - startTime;
-            pauses.forEach(p => { if(p.start && p.end) total -= (p.end-p.start); });
-
-            let timeline = `Start: ${formatTime(startTime)}`;
-            pauses.forEach((p,i)=>{ timeline += ` | Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)}`; });
-            timeline += ` | End: ${formatTime(endTime)}`;
-
-            document.getElementById("modNote").innerText =
-                `${timeline}\nFinal Time: ${formatTime(total)} (${Math.round(total*fps)} frames at ${fps} FPS)`;
-        }
-
-        // ---- Export / Copy / Reset ----
-        function exportRunData() {
-            const d = { startTime, endTime, pauses, fps:getFPS() };
-            const blob = new Blob([JSON.stringify(d,null,2)], { type:"application/json" });
-            const a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = "run_data.json";
-            a.click();
-        }
-
-        function copyModMessage() {
-            const t = document.getElementById("modNote").innerText;
-            if(!t) return;
-            navigator.clipboard.writeText(t).then(()=>alert("Copied to clipboard!"));
-        }
-
-        function resetRun() {
-            startTime=0; endTime=0; pauses=[]; currentPause=null;
-            document.getElementById("pauseList").innerHTML="";
-            document.getElementById("pauseSection").style.display="none";
-            document.getElementById("modNote").innerText="";
-        }
+        function exportRunData(){const d={startTime,endTime,pauses,fps:getFPS()};const blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="run_data.json";a.click()}
+        function copyModMessage(){const t=document.getElementById("modNote").innerText;if(!t)return;navigator.clipboard.writeText(t).then(()=>alert("Copied to clipboard!"))}
+        function resetRun(){startTime=0;endTime=0;pauses=[];currentPause=null;document.getElementById("pauseList").innerHTML="";document.getElementById("pauseSection").style.display="none";document.getElementById("modNote").innerText=""}
     </script>
 </body>
 </html>
