@@ -28,7 +28,7 @@
     <h2>Select Video Source</h2>
     <select id="videoSource" onchange="switchSource()">
         <option value="youtube">YouTube</option>
-        <option value="medal">Medal</option>
+        <option value="drive">Google Drive</option>
         <option value="file">Local File</option>
     </select><br><br>
 
@@ -36,9 +36,9 @@
         <input type="text" id="videoUrl" placeholder="Enter YouTube URL">
         <button onclick="loadVideo()">Load YouTube Video</button>
     </div>
-    <div id="medalSection" style="display:none;">
-        <input type="text" id="medalUrl" placeholder="Enter Medal Clip URL">
-        <button onclick="loadMedal()">Load Medal Clip</button>
+    <div id="driveSection" style="display:none;">
+        <input type="text" id="driveUrl" placeholder="Enter Google Drive Share Link">
+        <button onclick="loadDrive()">Load Drive Video</button>
     </div>
     <div id="fileSection" style="display:none;">
         <input type="file" id="videoFile" accept="video/*">
@@ -47,7 +47,9 @@
     <input type="number" id="fpsInput" value="60" min="1" max="240" style="width:120px;">
     <button onclick="resetRun()">Reset Run</button><br><br>
 
-    <div id="youtubePlayer"></div><br>
+    <div id="videoContainer" style="display: flex; justify-content: center;">
+        <div id="youtubePlayer"></div>
+    </div><br>
 
     <div class="controls-container">
         <div class="control-box">
@@ -95,202 +97,176 @@
         let player, startTime=0, endTime=0, pauses=[], currentPause=null;
 
         function switchSource(){
-            ["youtube","medal","file"].forEach(s=>document.getElementById(s+"Section").style.display="none");
+            ["youtube","drive","file"].forEach(s=>document.getElementById(s+"Section").style.display="none");
             document.getElementById(document.getElementById("videoSource").value+"Section").style.display="block";
         }
 
-        async function detectFPSFromUrl(url){
-            const mi=await MediaInfo({format:'object'});
-            const res=await fetch(url);
-            const buf=await res.arrayBuffer();
-            const r=await mi.analyzeData(()=>buf.byteLength,(sz,off)=>new Uint8Array(buf.slice(off,off+sz)));
-            const t=r.media.track.find(t=>t.FrameRate);
-            return t&&t.FrameRate?parseFloat(t.FrameRate):60;
-        }
-
         async function detectFPS(file){
-            const mi=await MediaInfo({format:'object'});
+            const mi = await MediaInfo({format:'object'});
             return new Promise(res=>{
-                const fr=new FileReader();
-                fr.onload=async e=>{
-                    const r=await mi.analyzeData(()=>file.size,(sz,off)=>new Uint8Array(e.target.result.slice(off,off+sz)));
-                    const t=r.media.track.find(t=>t.FrameRate);
-                    res(t&&t.FrameRate?parseFloat(t.FrameRate):60);
+                const fr = new FileReader();
+                fr.onload = async e => {
+                    const r = await mi.analyzeData(()=>file.size,(sz,off)=>new Uint8Array(e.target.result.slice(off,off+sz)));
+                    const t = r.media.track.find(t=>t.FrameRate);
+                    res(t && t.FrameRate ? parseFloat(t.FrameRate) : 60);
                 };
                 fr.readAsArrayBuffer(file);
             });
         }
 
         function getFPS(){
-            const fps=parseFloat(document.getElementById('fpsInput').value);
-            return (fps&&fps>0)?fps:60;
+            const fps = parseFloat(document.getElementById('fpsInput').value);
+            return (fps && fps > 0) ? fps : 60;
         }
 
         function loadYouTubeAPI(){
-            const s=document.createElement('script');
-            s.src="https://www.youtube.com/iframe_api";
+            const s = document.createElement('script');
+            s.src = "https://www.youtube.com/iframe_api";
             document.body.appendChild(s);
         }
         loadYouTubeAPI();
 
-        function onYouTubeIframeAPIReady(){}
-
         function clearPlayer(){
-            const c=document.getElementById("youtubePlayer");
+            const container = document.getElementById("youtubePlayer");
             if(player && typeof player.destroy === 'function') player.destroy();
-            c.innerHTML="";
-            player=null;
+            container.innerHTML = "";
+            player = null;
         }
 
         function loadVideo(){
-            resetRun();
-            clearPlayer();
-            let url=document.getElementById('videoUrl').value.trim(),id=null;
-            try{
-                const u=new URL(url);
-                if(u.hostname.includes("youtu.be")) id=u.pathname.slice(1);
-                else if(u.searchParams.has("v")) id=u.searchParams.get("v");
-            }catch(e){alert("Invalid YouTube URL");return;}
+            resetRun(); clearPlayer();
+            let url = document.getElementById('videoUrl').value.trim(), id = null;
+            try {
+                const u = new URL(url);
+                if(u.hostname.includes("youtu.be")) id = u.pathname.slice(1);
+                else if(u.searchParams.has("v")) id = u.searchParams.get("v");
+            } catch(e){ alert("Invalid YouTube URL"); return; }
             if(id){
-                player=new YT.Player('youtubePlayer',{height:'340',width:'600',videoId:id,playerVars:{'autoplay':1,'enablejsapi':1}});
-            }else alert("Invalid YouTube URL");
+                player = new YT.Player('youtubePlayer', { height:'340', width:'600', videoId:id, playerVars:{'autoplay':1,'enablejsapi':1} });
+            } else alert("Invalid YouTube URL");
         }
 
-        async function loadMedal(){
-            resetRun();
-            clearPlayer();
-            try{
-                const m=document.getElementById("medalUrl").value.trim(),r=await fetch("https://medal.tv/oembed?url="+encodeURIComponent(m)),j=await r.json(),v=(j.html.match(/src="([^"]+\.mp4)"/)||[])[1];
-                if(!v)return alert("Could not find Medal video.");
-                const container=document.getElementById("youtubePlayer");
-                const el=document.createElement("video");
-                el.controls=true; el.width=600; el.height=340; el.src=v;
-                container.appendChild(el);
-                player=el;
-                document.getElementById("fpsInput").value=await detectFPSFromUrl(v);
-            }catch(e){console.error(e);alert("Failed to load Medal clip.");}
+        function loadDrive(){
+            resetRun(); clearPlayer();
+            let url = document.getElementById('driveUrl').value.trim();
+            let id = "";
+            const match = url.match(/[-\w]{25,}/);
+            if(match) id = match[0];
+            else return alert("Could not find Google Drive File ID");
+
+            const directUrl = `https://lh3.googleusercontent.com/u/0/d/${id}=s0?authuser=0`;
+            const container = document.getElementById("youtubePlayer");
+            const el = document.createElement("video");
+            el.controls = true; el.width = 600; el.height = 340; el.src = directUrl;
+            container.appendChild(el);
+            player = el;
         }
 
-        document.getElementById("videoFile").addEventListener("change",async e=>{
-            if(e.target.files.length>0){
-                resetRun();
-                clearPlayer();
-                const f=e.target.files[0];
-                const el=document.createElement("video");
-                el.controls=true; el.width=600; el.height=340; el.src=URL.createObjectURL(f);
+        document.getElementById("videoFile").addEventListener("change", async e => {
+            if(e.target.files.length > 0){
+                resetRun(); clearPlayer();
+                const f = e.target.files[0];
+                const el = document.createElement("video");
+                el.controls = true; el.width = 600; el.height = 340; el.src = URL.createObjectURL(f);
                 document.getElementById("youtubePlayer").appendChild(el);
-                player=el;
-                const fps=await detectFPS(f);
-                document.getElementById("fpsInput").value=fps;
+                player = el;
+                document.getElementById("fpsInput").value = await detectFPS(f);
             }
         });
 
         function getCurrentTimeSafe(){
             if(player instanceof HTMLVideoElement) return player.currentTime;
-            else if(player && typeof player.getCurrentTime === 'function') return player.getCurrentTime();
+            if(player && typeof player.getCurrentTime === 'function') return player.getCurrentTime();
             return 0;
         }
 
         function seekToSafe(t){
-            if(player instanceof HTMLVideoElement) player.currentTime=t;
-            else if(player && typeof player.seekTo === 'function') player.seekTo(t,true);
+            if(player instanceof HTMLVideoElement) player.currentTime = t;
+            else if(player && typeof player.seekTo === 'function') player.seekTo(t, true);
         }
 
-        function framesToTime(f,fps){
-            const ms=Math.round(f*(1000/fps)),m=Math.floor(ms/60000),s=Math.floor((ms%60000)/1000),ms2=ms%1000;
-            return `${m}:${s.toString().padStart(2,'0')}.${ms2.toString().padStart(3,'0')}`;
+        function framesToTime(f, fps){
+            const ms = Math.round(f * (1000 / fps)), m = Math.floor(ms / 60000), s = Math.floor((ms % 60000) / 1000), ms2 = ms % 1000;
+            return `${m}:${s.toString().padStart(2, '0')}.${ms2.toString().padStart(3, '0')}`;
         }
 
         function formatTime(sec){
-            const fps=getFPS();
-            return framesToTime(Math.round(sec*fps),fps);
+            const fps = getFPS();
+            return framesToTime(Math.round(sec * fps), fps);
         }
 
         function skipFrames(f){
-            const fps=getFPS(),cur=getCurrentTimeSafe(),fr=Math.round(cur*fps),newT=(fr+f)/fps;
+            const fps = getFPS(), cur = getCurrentTimeSafe(), fr = Math.round(cur * fps), newT = (fr + f) / fps;
             seekToSafe(newT);
         }
 
-        function skipSeconds(s){seekToSafe(getCurrentTimeSafe()+s)}
+        function skipSeconds(s){ seekToSafe(getCurrentTimeSafe() + s); }
 
         function addPause(){
-            currentPause={start:null,end:null};
-            document.getElementById("pauseSection").style.display="block";
+            currentPause = {start:null, end:null};
+            document.getElementById("pauseSection").style.display = "block";
         }
 
-        function setPauseStart(){
-            if(currentPause){currentPause.start=getCurrentTimeSafe(); alert("Pause start set!");}
-        }
-
+        function setPauseStart(){ if(currentPause) currentPause.start = getCurrentTimeSafe(); }
         function setPauseEnd(){
-            if(currentPause&&currentPause.start!=null){
-                currentPause.end=getCurrentTimeSafe();
+            if(currentPause && currentPause.start !== null){
+                currentPause.end = getCurrentTimeSafe();
                 pauses.push(currentPause);
-                currentPause=null;
-                document.getElementById("pauseSection").style.display="none";
-                renderPauses();
-                updateModNote();
+                currentPause = null;
+                document.getElementById("pauseSection").style.display = "none";
+                renderPauses(); updateModNote();
             }
         }
 
         function renderPauses(){
-            const l=document.getElementById("pauseList");
-            l.innerHTML="";
-            pauses.forEach((p,i)=>{
-                const d=document.createElement("div");
-                d.className="pause-item";
-                d.innerHTML=`Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)} <button onclick="removePause(${i})">Remove</button>`;
+            const l = document.getElementById("pauseList");
+            l.innerHTML = "";
+            pauses.forEach((p, i) => {
+                const d = document.createElement("div");
+                d.className = "pause-item";
+                d.innerHTML = `Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)} <button onclick="removePause(${i})">Remove</button>`;
                 l.appendChild(d);
             });
         }
 
-        function removePause(i){
-            pauses.splice(i,1);
-            renderPauses();
-            updateModNote();
-        }
-
-        function setStartTime(){startTime=getCurrentTimeSafe();updateModNote()}
-        function setEndTime(){endTime=getCurrentTimeSafe();updateModNote()}
-        function displayCurrentFrame(){alert("Current Frame: "+Math.round(getCurrentTimeSafe()*getFPS()))}
+        function removePause(i){ pauses.splice(i, 1); renderPauses(); updateModNote(); }
+        function setStartTime(){ startTime = getCurrentTimeSafe(); updateModNote(); }
+        function setEndTime(){ endTime = getCurrentTimeSafe(); updateModNote(); }
+        function displayCurrentFrame(){ alert("Current Frame: " + Math.round(getCurrentTimeSafe() * getFPS())); }
 
         function updateModNote(){
             if(startTime === 0 || endTime === 0){
-                document.getElementById("modNote").innerText="Set both start and end times.";
+                document.getElementById("modNote").innerText = "Set both start and end times.";
                 return;
             }
-            const fps=getFPS();
-            let total=endTime-startTime;
-            pauses.forEach(p=>{if(p.start!=null && p.end!=null) total-=(p.end-p.start)});
-            
-            let timeline=`Start: ${formatTime(startTime)}`;
-            pauses.forEach((p,i)=>{
-                timeline+= ` | Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)}`;
-            });
-            timeline+= ` | End: ${formatTime(endTime)}`;
-            document.getElementById("modNote").innerText=`${timeline}\nFinal Time: ${formatTime(total)} (${Math.round(total*fps)} frames at ${fps} FPS)`;
+            const fps = getFPS();
+            let total = endTime - startTime;
+            pauses.forEach(p => { if(p.start !== null && p.end !== null) total -= (p.end - p.start); });
+            let timeline = `Start: ${formatTime(startTime)}`;
+            pauses.forEach((p, i) => { timeline += ` | Pause ${i+1}: ${formatTime(p.start)} → ${formatTime(p.end)}`; });
+            timeline += ` | End: ${formatTime(endTime)}`;
+            document.getElementById("modNote").innerText = `${timeline}\nFinal Time: ${formatTime(total)} (${Math.round(total * fps)} frames at ${fps} FPS)`;
         }
 
         function exportRunData(){
-            const d={startTime,endTime,pauses,fps:getFPS()};
-            const blob=new Blob([JSON.stringify(d,null,2)],{type:"application/json"});
-            const a=document.createElement("a");
-            a.href=URL.createObjectURL(blob);
-            a.download="run_data.json";
-            a.click();
+            const d = { startTime, endTime, pauses, fps: getFPS() };
+            const blob = new Blob([JSON.stringify(d, null, 2)], { type: "application/json" });
+            const a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
+            a.download = "run_data.json"; a.click();
         }
 
         function copyModMessage(){
-            const t=document.getElementById("modNote").innerText;
-            if(!t)return;
-            navigator.clipboard.writeText(t).then(()=>alert("Copied to clipboard!"));
+            const t = document.getElementById("modNote").innerText;
+            if(!t) return;
+            navigator.clipboard.writeText(t).then(() => alert("Copied to clipboard!"));
         }
 
         function resetRun(){
-            startTime=0;endTime=0;pauses=[];currentPause=null;
-            document.getElementById("pauseList").innerHTML="";
-            document.getElementById("pauseSection").style.display="none";
-            document.getElementById("modNote").innerText="";
+            startTime = 0; endTime = 0; pauses = []; currentPause = null;
+            document.getElementById("pauseList").innerHTML = "";
+            document.getElementById("pauseSection").style.display = "none";
+            document.getElementById("modNote").innerText = "";
         }
     </script>
 </body>
