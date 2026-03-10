@@ -142,7 +142,7 @@
                 else if(u.searchParams.has("v")) id = u.searchParams.get("v");
             } catch(e){ alert("Invalid YouTube URL"); return; }
             if(id){
-                player = new YT.Player('youtubePlayer', { height:'340', width:'600', videoId:id, playerVars:{'autoplay':1,'enablejsapi':1} });
+                player = new YT.Player('youtubePlayer', { height:'540', width:'960', videoId:id, playerVars:{'autoplay':1,'enablejsapi':1} });
             } else alert("Invalid YouTube URL");
         }
 
@@ -157,7 +157,7 @@
             const directUrl = `https://lh3.googleusercontent.com/u/0/d/${id}=s0?authuser=0`;
             const container = document.getElementById("youtubePlayer");
             const el = document.createElement("video");
-            el.controls = true; el.width = 600; el.height = 340; el.src = directUrl;
+            el.controls = true; el.width = 960; el.height = 540; el.src = directUrl;
             container.appendChild(el);
             player = el;
         }
@@ -167,7 +167,7 @@
                 resetRun(); clearPlayer();
                 const f = e.target.files[0];
                 const el = document.createElement("video");
-                el.controls = true; el.width = 600; el.height = 340; el.src = URL.createObjectURL(f);
+                el.controls = true; el.width = 960; el.height = 540; el.src = URL.createObjectURL(f);
                 document.getElementById("youtubePlayer").appendChild(el);
                 player = el;
                 document.getElementById("fpsInput").value = await detectFPS(f);
@@ -271,3 +271,4 @@
     </script>
 </body>
 </html>
+
